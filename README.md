@@ -1,21 +1,18 @@
 # ISIECO Clients
 
-Nouvelle plateforme client ISIECO, reconstruite indépendamment du dépôt backend `fadellba/isieco-report`.
+Reconstruction indépendante de la plateforme ISIECO. Ce dépôt contient le nouveau Web et le nouveau Mobile ; le backend NestJS existant demeure dans `fadellba/isieco-report` et reste l’unique source de vérité métier.
 
-## Architecture
+## Applications et packages
 
-- `apps/web`: portail web du centre de commandement et des équipes opérationnelles.
-- `apps/mobile`: application mobile citoyen et agent terrain.
-- `packages/api-client`: client HTTP partagé, authentifié par le jeton Supabase.
-- `packages/design-tokens`: fondations visuelles partagées.
+- `apps/web` : portail citoyen Web, centre de commandement, espaces agents et administration.
+- `apps/mobile` : application Expo pour citoyens et agents de terrain.
+- `packages/api-client` : client HTTP commun, authentification Bearer, erreurs et clés d’idempotence.
+- `packages/design-tokens` : palette et fondations visuelles.
+- `docs/architecture` et `docs/product` : architecture et couverture des parcours.
 
-Le backend NestJS existant reste la source de vérité métier. Les clients utilisent exclusivement l'API `/api/v1` et Supabase Auth. Les rôles et autorisations sont toujours validés par le backend.
+## Prérequis et démarrage
 
-## Staging
-
-Configurer les variables publiques listées dans `.env.example`. L'URL API de staging par défaut est `https://isieco-api-staging.onrender.com/api/v1`. Le client ne contient aucune clé Supabase `service_role` ou secret serveur.
-
-## Développement
+Node.js 22.13+ et pnpm 12+.
 
 ```bash
 corepack enable
@@ -23,15 +20,40 @@ pnpm install
 pnpm dev:web
 ```
 
-Pour l'application mobile :
+Pour le mobile :
 
 ```bash
 pnpm dev:mobile
 ```
 
-## Sécurité
+Contrôles :
 
-- Les jetons d'accès ne sont jamais écrits dans le dépôt ni dans les logs applicatifs.
-- Les médias privés passent par les endpoints backend et leurs URLs signées temporaires.
-- Aucun rôle transmis par le navigateur ou l'application mobile ne fait autorité.
-- Les projets Render et les variables de production du backend ne sont pas modifiés par ce dépôt.
+```bash
+pnpm typecheck
+pnpm build:web
+pnpm build:mobile
+```
+
+## Configuration Staging
+
+Les valeurs publiques de staging sont documentées dans `.env.example`. Copier les variables nécessaires dans l’environnement local ou dans Vercel :
+
+- Web : `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Mobile : `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+
+L’API par défaut est `https://isieco-api-staging.onrender.com/api/v1`. La clé Supabase utilisée par les clients est la clé publique publishable du projet existant. Une clé `service_role`, un secret serveur ou un jeton d’administration ne doivent jamais être ajoutés à ce dépôt.
+
+## Règles d’intégration
+
+1. Supabase Auth authentifie la personne et fournit le jeton d’accès.
+2. Les clients envoient `Authorization: Bearer <access-token>` à l’API.
+3. Le profil métier et les rôles viennent de `GET /accounts/me`.
+4. Les rôles affichés dans le client ne remplacent jamais les gardes backend.
+5. Les fichiers privés sont transmis au backend. Les clients utilisent ses URL signées temporaires et ne connaissent pas les chemins Storage.
+6. Les mutations qui l’exigent transmettent une clé `Idempotency-Key`.
+
+## Déploiement
+
+Vercel sert uniquement `apps/web` et construit depuis la racine du monorepo. La CI vérifie les types Web et Mobile, puis construit l’application Web. Android/iOS utilisent Expo/EAS ; Vercel ne distribue pas les binaires mobiles.
+
+Le staging Render existant est utilisé tel quel. Ce dépôt ne modifie ni le backend, ni la base de données, ni les secrets ou environnements de production.
