@@ -49,7 +49,9 @@ jobs:
             echo "Android SDK Manager not found under $SDK_ROOT."
             exit 1
           fi
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses
+          set -o pipefail
           "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
 
       - name: Install workspace dependencies
