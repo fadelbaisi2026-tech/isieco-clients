@@ -1,1 +1,7 @@
-{"framework":"vite","buildCommand":"pnpm --filter @isieco/web build","outputDirectory":"apps/web/dist","installCommand":"pnpm install --no-frozen-lockfile","rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+{
+  "framework": "vite",
+  "installCommand": "corepack enable && corepack prepare pnpm@12.16.1 --activate && pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm --filter @isieco/web build",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
