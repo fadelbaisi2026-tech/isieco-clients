@@ -1,0 +1,2 @@
+import{createClient}from"@supabase/supabase-js";const url=import.meta.env.VITE_SUPABASE_URL||"https://mlhbdautaxufubaybzyt.supabase.co";const key=import.meta.env.VITE_SUPABASE_ANON_KEY||"sb_publishable_wFFes4eCYuJ9bEOMXAWxjg_ecOsYWZS";// Public staging publishable key only. Never use a service_role or server secret here.
+export const supabase=createClient(url,key,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
