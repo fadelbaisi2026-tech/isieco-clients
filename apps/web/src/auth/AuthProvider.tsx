@@ -7,15 +7,19 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { ApiError } from "@isieco/api-client";
 import { supabase } from "../lib/supabase";
 import { api } from "../lib/api";
 import type { AccountProfile } from "../lib/types";
+
+type ProfileErrorKind = "service" | "profile" | "session" | null;
 
 interface AuthValue {
   session: Session | null;
   profile: AccountProfile | null;
   loading: boolean;
   profileError: string | null;
+  profileErrorKind: ProfileErrorKind;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -27,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileErrorKind, setProfileErrorKind] = useState<ProfileErrorKind>(null);
 
   useEffect(() => {
     let alive = true;
@@ -38,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!nextSession) {
         setProfile(null);
         setProfileError(null);
+        setProfileErrorKind(null);
         setLoading(false);
         return;
       }
@@ -47,10 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (alive) {
           setProfile(nextProfile);
           setProfileError(null);
+          setProfileErrorKind(null);
         }
       } catch (error) {
         if (alive) {
+          const status = error instanceof ApiError ? error.status : null;
           setProfile(null);
+          setProfileErrorKind(
+            status === 0 || (status !== null && status >= 500) ? "service" : "profile",
+          );
           setProfileError(
             error instanceof Error ? error.message : "Profil métier indisponible.",
           );
@@ -67,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!nextSession) {
         setProfile(null);
         setProfileError(null);
+        setProfileErrorKind(null);
         setLoading(false);
         return;
       }
@@ -87,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setProfile(null);
         setProfileError("La session n’a pas pu être vérifiée. Reconnectez-vous.");
+        setProfileErrorKind("session");
         setLoading(false);
       }
     });
@@ -103,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       profileError,
+      profileErrorKind,
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -112,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
       },
     }),
-    [session, profile, loading, profileError],
+    [session, profile, loading, profileError, profileErrorKind],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

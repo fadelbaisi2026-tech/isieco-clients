@@ -53,20 +53,32 @@ const sectionRole: Record<string, string> = {
 };
 
 function Root() {
-  const { profile, session, loading, profileError } = useAuth();
+  const { profile, session, loading, profileError, profileErrorKind } = useAuth();
 
   if (loading) return <div className="full-loader">Vérification de votre session…</div>;
   if (!session) return <Navigate to="/connexion" replace />;
 
   if (profileError) {
+    const title =
+      profileErrorKind === "service"
+        ? "Service ISIECO indisponible"
+        : profileErrorKind === "session"
+          ? "Session à vérifier"
+          : "Profil métier indisponible";
+
+    const detail =
+      profileErrorKind === "service"
+        ? "Votre session Supabase est présente, mais l’API ISIECO n’a pas répondu. Le profil n’a pas été supprimé."
+        : profileErrorKind === "session"
+          ? "La session de connexion n’a pas pu être vérifiée. Reconnectez-vous."
+          : "Le backend doit associer votre identité Supabase à un profil ISIECO actif.";
+
     return (
       <div className="full-loader">
         <div className="access-card">
-          <h2>Profil métier indisponible</h2>
+          <h2>{title}</h2>
           <p>{profileError}</p>
-          <small>
-            Le backend doit associer votre identité Supabase à un profil ISIECO actif.
-          </small>
+          <small>{detail}</small>
         </div>
       </div>
     );

@@ -1,1 +1,10 @@
-import{createApiClient}from"@isieco/api-client";import{supabase}from"./supabase";export const api=createApiClient({baseUrl:import.meta.env.VITE_API_BASE_URL||"https://isieco-api-staging.onrender.com/api/v1",getAccessToken:async()=>(await supabase.auth.getSession()).data.session?.access_token??null});
+import { createApiClient } from "@isieco/api-client";
+import { supabase } from "./supabase";
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || "/api/v1";
+
+export const api = createApiClient({
+  baseUrl: apiBaseUrl,
+  getAccessToken: async () =>
+    (await supabase.auth.getSession()).data.session?.access_token ?? null,
+});
