@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const status = error instanceof ApiError ? error.status : null;
           setProfile(null);
           setProfileErrorKind(
-            status === 0 || (status !== null && status >= 500) ? "service" : "profile",
+            status === 401 ? "session" : status === 0 || (status !== null && status >= 500) ? "service" : "profile",
           );
           setProfileError(
             error instanceof Error ? error.message : "Profil métier indisponible.",
