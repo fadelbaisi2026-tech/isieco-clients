@@ -1,4 +1,4 @@
-name: Android test APK
+name: Android standalone test APK
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build-android-apk:
-    name: Build staging APK
+    name: Build standalone staging APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -60,23 +60,30 @@ jobs:
       - name: Generate native Android project
         run: pnpm --filter @isieco/mobile exec expo prebuild --platform android --clean --no-install
 
-      - name: Build installable debug APK
+      - name: Build standalone release APK
         working-directory: apps/mobile/android
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Verify APK and calculate checksum
+      - name: Verify embedded JavaScript bundle and calculate checksum
+        shell: bash
         run: |
-          test -s apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
-          sha256sum apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk | tee apps/mobile/android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APK_CONTENTS="$(unzip -Z1 "$APK")"
+          if ! printf '%s\n' "$APK_CONTENTS" | grep -Fxq "assets/index.android.bundle"; then
+            echo "::error::The APK does not contain assets/index.android.bundle; refusing to publish a Metro-dependent package."
+            exit 1
+          fi
+          sha256sum "$APK" | tee apps/mobile/android/app/build/outputs/apk/release/SHA256SUMS.txt
 
-      - name: Upload Android test package
+      - name: Upload standalone Android test package
         uses: actions/upload-artifact@v4
         with:
-          name: isieco-mobile-staging-debug-${{ github.sha }}
+          name: isieco-mobile-staging-standalone-${{ github.sha }}
           path: |
-            apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
-            apps/mobile/android/app/build/outputs/apk/debug/SHA256SUMS.txt
+            apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            apps/mobile/android/app/build/outputs/apk/release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
