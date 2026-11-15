@@ -110,7 +110,7 @@ export function DashboardPage() {
     const reportItems = (data?.map?.items ?? []).filter((item) => item.kind === "SIGNALEMENT");
 
     return (
-      <div className="page-stack qualification-dashboard">
+      <div className="page-stack dashboard-page qualification-dashboard">
         <div className="page-heading">
           <div>
             <span className="eyebrow">SUIVI DE LA QUALIFICATION</span>
@@ -197,7 +197,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack dashboard-page">
       <div className="page-heading">
         <div>
           <span className="eyebrow">CENTRE DE COMMANDEMENT</span>
