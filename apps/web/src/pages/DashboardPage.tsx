@@ -179,8 +179,8 @@ export function DashboardPage() {
             />
           )}
           <div className="map-footnote">
-            <span>{data?.map?.totalLocated ?? 0} signalement(s) localisé(s)</span>
-            <span>{data?.summary?.withoutLocation ?? 0} élément(s) actif(s) sans coordonnées, tous métiers confondus</span>
+            <span>{reportItems.length} position(s) de signalement affichée(s)</span>
+            <span>{data?.map?.hasMore ? "Affichage cartographique partiel" : "Points colorés selon le statut"}</span>
           </div>
         </article>
 
