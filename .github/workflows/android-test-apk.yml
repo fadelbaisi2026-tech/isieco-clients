@@ -75,19 +75,7 @@ jobs:
           if ! grep -Fx "assets/index.android.bundle" <<< "$APK_CONTENTS" >/dev/null; then
             echo "::error::The APK does not contain assets/index.android.bundle; refusing to publish a Metro-dependent package."
             echo "Bundle-related APK entries:"
-            grep -E '(^|/)index\\.android\\.bundle
-          sha256sum "$APK" | tee apps/mobile/android/app/build/outputs/apk/release/SHA256SUMS.txt
-
-      - name: Upload standalone Android test package
-        uses: actions/upload-artifact@v4
-        with:
-          name: isieco-mobile-staging-standalone-${{ github.sha }}
-          path: |
-            apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-            apps/mobile/android/app/build/outputs/apk/release/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 14
- <<< "$APK_CONTENTS" || true
+            grep -E 'index[.]android[.]bundle' <<< "$APK_CONTENTS" || true
             exit 1
           fi
           echo "Verified embedded JavaScript bundle: assets/index.android.bundle"
