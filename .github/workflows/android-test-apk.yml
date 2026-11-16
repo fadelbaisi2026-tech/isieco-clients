@@ -1,0 +1,92 @@
+name: Android standalone test APK
+
+on:
+  push:
+    branches:
+      - feat/rebuild-platform-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-apk:
+    name: Build standalone staging APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EXPO_PUBLIC_API_BASE_URL: https://isieco-api-staging.onrender.com/api/v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [ -z "$SDK_ROOT" ]; then
+            echo "ANDROID_HOME / ANDROID_SDK_ROOT is not configured on the runner."
+            exit 1
+          fi
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort | tail -n 1)"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "Android SDK Manager not found under $SDK_ROOT."
+            exit 1
+          fi
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses
+          set -o pipefail
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate native Android project
+        run: pnpm --filter @isieco/mobile exec expo prebuild --platform android --clean --no-install
+
+      - name: Build standalone release APK
+        working-directory: apps/mobile/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Verify embedded JavaScript bundle and calculate checksum
+        shell: bash
+        run: |
+          APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APK_CONTENTS="$(unzip -Z1 "$APK")"
+          if ! grep -Fx "assets/index.android.bundle" <<< "$APK_CONTENTS" >/dev/null; then
+            echo "::error::The APK does not contain assets/index.android.bundle; refusing to publish a Metro-dependent package."
+            echo "Bundle-related APK entries:"
+            grep -E 'index[.]android[.]bundle' <<< "$APK_CONTENTS" || true
+            exit 1
+          fi
+          echo "Verified embedded JavaScript bundle: assets/index.android.bundle"
+          sha256sum "$APK" | tee apps/mobile/android/app/build/outputs/apk/release/SHA256SUMS.txt
+
+      - name: Upload standalone Android test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: isieco-mobile-staging-standalone-${{ github.sha }}
+          path: |
+            apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            apps/mobile/android/app/build/outputs/apk/release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

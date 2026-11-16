@@ -1,0 +1,36 @@
+name: Client validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "feat/**"]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm typecheck:web
+      - run: pnpm build:web
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm typecheck:mobile
+      - run: pnpm build:mobile

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "installCommand": "corepack pnpm@12.16.1 install --no-frozen-lockfile",
+  "buildCommand": "corepack pnpm@12.16.1 --filter @isieco/web build",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    {
+      "source": "/api/v1/(.*)",
+      "destination": "https://isieco-api-staging.onrender.com/api/v1/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
